@@ -1,34 +1,40 @@
 from bash import bash
 
+def is_numeric(value):
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
 
 def quote_if_necessary(value):
-    if ' ' in str(value):
-        return f"\"{value}\""
-    else:
+    if is_numeric(value):
         return value
+    else:
+        return f"'{value}'"
 
 
-def check_equals(field,value):
+def EQ(field,value):
     return f"{field} = {quote_if_necessary(value)}"
 
-def check_contains(field,value):
+def IN(field,value):
     return f"{field} ~ {quote_if_necessary(value)}"
 
-def check_or(*conditions):
+def OR(*conditions):
     return f"( {' || '.join([c for c in conditions])} )"
-def check_and(*conditions):
+def AND(*conditions):
     return f"( {' && '.join([c for c in conditions])} )"
 
-def check_gt(field,value):
+def GT(field,value):
     return f"{field} > {quote_if_necessary(value)}"
 
-def check_gte(field,value):
+def GTE(field,value):
     return f"{field} >= {quote_if_necessary(value)}"
 
-def check_lt(field,value):
+def LT(field,value):
     return f"{field} < {quote_if_necessary(value)}"
 
-def check_lte(field,value):
+def LTE(field,value):
     return f"{field} <= {quote_if_necessary(value)}"
 
 
@@ -40,6 +46,12 @@ class RecUtilsWrap(object):
 
         self.__prefixargs__ = f" -t {self.__rec__} "
         self.__postfixargs__  = f" {self.__filename__}"
+
+
+    def create_db(self):
+        with open(self.__filename__,'wt') as fp:
+            fp.write(f"%rec: {self.__rec__}\n%key: {self.__pkey__}\n%auto: {self.__pkey__}\n")
+
 
     def parse(self,output:str):
 
@@ -58,8 +70,10 @@ class RecUtilsWrap(object):
 
 
     def __expression_by_key__(self,value):
-        return check_equals(self.__pkey__,value)
+        return EQ(self.__pkey__,value)
 
+    def __expression_by_field__(self,field,value):
+        return EQ(field,value)
 
     def bash(self,cmd,argstr=''):
         return str(bash(f"{cmd} {self.__prefixargs__} {argstr} {self.__postfixargs__}"))
